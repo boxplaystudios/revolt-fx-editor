@@ -17,6 +17,14 @@
             <el-dropdown-item command="show_json" divided>Show JSON...</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
+        -
+        <span style="cursor: pointer" @click="handleMenuItem('copy_json')">
+           COPY JSON
+        </span>
+        -
+        <span style="cursor: pointer" @click="handleMenuItem('post_json')">
+           <b>SAVE JSON</b>
+        </span>
       </div>
 
       <div self="right" style="margin-right: 10px">
@@ -70,6 +78,14 @@
 
           case 'show_json':
             this.$refs.showBundleJsonPanel.show();
+            break;
+
+          case 'copy_json':
+            this.$refs.showBundleJsonPanel.copy();
+            break;
+
+          case 'post_json':
+            this.$refs.showBundleJsonPanel.post();
             break;
         }
       }

@@ -339,6 +339,43 @@ export class Editor {
     saveAs(new Blob([JSON.stringify(obj)], {type: 'application/json'}), `${name}.json`);
   }
 
+  postJson(name, obj) {
+    if (!name || name == '') {
+      name = this.vue.$store.state.spritesheet.jsonName;
+    }
+
+    if (!name.endsWidth('.json')) {
+      name += '.json';
+    }
+
+    return new Promise((resolve, reject) => {
+      const loader = this.vue.$loading({fullscreen: true, background: 'white', text: `POSTING BUNDLE ${name}`});
+
+      fetch('http://localhost:9998/config/revolt-fx-json', {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            filename: name,
+            content: obj,
+          })
+        },
+      )
+        .then(_data => {
+          loader.close();
+          resolve(name);
+        })
+        .catch(error => {
+          console.error('Error posting bundle:', error);
+          loader.close();
+          reject(error);
+        });
+    });
+  }
+
 
   loadDefaultBundle() {
     return new Promise(async (resolve, reject) => {

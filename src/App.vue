@@ -37,7 +37,7 @@
     created() {
       this.$eventBus.$once('canvasReady', async app => {
         const editor = Vue.prototype.$editor = new Editor(app, this);
-        await editor.loadDefaultBundle();
+        //await editor.loadDefaultBundle();
         this.blocker = false;
       });
     }

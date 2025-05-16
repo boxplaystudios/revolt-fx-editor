@@ -31,10 +31,22 @@
       },
 
       copy() {
+        this.bundle = JSON.stringify(this.$store.state.bundle);
         this.$copyText(this.bundle).then((e) => {
           this.$notify({title:'Copied'});
         }, (err) => {
           this.$notify.error({title:'Error'});
+        });
+      },
+      
+      // Post the bundle to the dev server
+      post() {
+        const b = this.$store.state.bundle;
+        this.$editor.postJson('SwollFX', b).then((filename) => {
+          this.$notify({title:`${filename} posted successfully`});
+        }).catch((error) => {
+          console.error('Error posting bundle:', error);
+          this.$notify.error({title:'Error posting bundle'});
         });
       },
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-dialog title="Load Bundle" :visible.sync="visible" width="400px">
-
+      <span>Add a bundle preset JSON and spritesheet PNG and JSON file</span>
       <help text="Add a bundle preset JSON and spritesheet PNG and JSON file">
         <div v-if="!mode || mode=='files'" class="choose-file">
           <span>{{infoFiles}}</span>
