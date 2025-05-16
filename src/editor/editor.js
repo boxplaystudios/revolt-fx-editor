@@ -344,7 +344,7 @@ export class Editor {
       name = this.vue.$store.state.spritesheet.jsonName;
     }
 
-    if (!name.endsWidth('.json')) {
+    if (!name.endsWith('.json')) {
       name += '.json';
     }
 
