@@ -4,6 +4,7 @@
     <el-select :disabled="disabled" size="small" v-model="data" @change="$emit('input', data);$emit('change', data);">
       <el-option
         v-for="option in options"
+        :key="option.value + '-' + label"
         :value="option.value"
         :label="getLabel(option)"
       />

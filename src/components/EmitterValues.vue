@@ -557,7 +557,6 @@
           {value: 'easeInOutQuint', name: ''},
           {value: 'easeInSine', name: ''},
           {value: 'easeOutSine', name: ''},
-          {value: 'easeInSine', name: ''},
           {value: 'easeInOutSine', name: ''},
           {value: 'easeInExpo', name: ''},
           {value: 'easeOutExpo', name: ''},
