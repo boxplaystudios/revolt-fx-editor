@@ -32,7 +32,7 @@
         this.name = this.$store.state.bundle.name;
         tempImage = null;
         tempDef = null;
-        if (this.$refs.preview) this.$refs.preview.src = '/static/foo.png';
+        if (this.$refs.preview) this.$refs.preview.removeAttribute('src');
       },
 
       save() {

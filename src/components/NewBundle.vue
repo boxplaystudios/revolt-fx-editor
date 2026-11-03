@@ -57,7 +57,7 @@
         this.tempJson = null;
         jsonFile = null;
         imageFile = null;
-        if (this.$refs.preview) this.$refs.preview.src = '/static/foo.png';
+        if (this.$refs.preview) this.$refs.preview.removeAttribute('src');
       },
 
       async handleFiles(e) {
