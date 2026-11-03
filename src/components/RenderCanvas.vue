@@ -29,20 +29,20 @@
         if (this.$editor) this.$editor.resize(w, h);
       }
     },
-    mounted() {
+    async mounted() {
 
       const canvas = this.$refs.canvas;
       let w = canvas.offsetWidth;
       let h = canvas.offsetHeight;
-      const app = this.app = new PIXI.Application(w, h, {
-        view: canvas,
-        backgroundColor: 0x333333,
-        roundPixels: true
+      const app = this.app = new PIXI.Application();
+      await app.init({
+        canvas,
+        width: w,
+        height: h,
+        background: 0x333333,
+        roundPixels: true,
+        preference: 'webgl',
       });
-
-      const resize = () => {
-
-      };
 
       window.addEventListener('resize', () => {
         this.resize();

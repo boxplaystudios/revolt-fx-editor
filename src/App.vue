@@ -22,7 +22,7 @@
 <script>
   import RenderCanvas from "./components/RenderCanvas";
   import Vue from 'vue'
-  import {Editor} from "./editor/Editor";
+  import {Editor} from "./editor/editor";
   import TopMenu from "./components/TopMenu";
   import SidePanel from "./components/SidePanel";
 

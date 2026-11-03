@@ -50,3 +50,22 @@ npm run dev
 npm run build
 ```
 
+
+## Boxplay fork
+
+Built with Vite on pixi.js 8 and revolt-fx 1.3.6 — the same particle engine the games run, so the
+preview matches the game.
+
+The games use the build through the breakaway dev server (`packages/dev-server` in the boxplay
+repo), which serves it at `http://localhost:9998/fx-editor/` from `bin/public/fx-editor`. To update
+it, build and replace that folder:
+
+``` bash
+npm run build
+rm -rf ../boxplay/packages/dev-server/bin/public/fx-editor
+cp -R dist ../boxplay/packages/dev-server/bin/public/fx-editor
+```
+
+**SAVE JSON** posts the bundle to the dev server, which writes it into the running game's
+`raw-assets/particles{m}/`. The file name is shown next to it: the bundle file you loaded (or the
+new bundle's name); click it to change it.

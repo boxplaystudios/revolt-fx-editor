@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {Layers} from "./Layers";
+import {Layers} from "./layers";
 import {
   EVENT_EMITTER_AUTO_ROTATION_CHANGED, EVENT_EMITTER_CHILDS_CHANGED,
   EVENT_EMITTER_CORE_CHANGED,
@@ -10,10 +10,10 @@ import {
   EVENT_EMITTER_ROTATION_CHANGED, EVENT_RESET, EVENT_SEQUENCE_PRESET_SELECTED
 } from "../events";
 import {ClickGizmo, Gizmos} from "./gizmos";
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 import saveAs from 'save-as'
-import {SET_BUNDLE} from "../store";
-import * as md5 from 'js-md5';
+import {SET_BUNDLE, SET_BUNDLE_FILE} from "../store";
+import md5 from 'js-md5';
 import {readAsText, readAsDataURL} from 'promise-file-reader';
 
 export class Editor {
@@ -64,8 +64,8 @@ export class Editor {
     ];
 
 
-    const infoText = new PIXI.Text('', {fontFamily: 'Helvetica Neue', fontWeight: 200, fontSize: 13, fill: 0x999999});
-    this.instructionText = new PIXI.Text('', {fontFamily: 'Helvetica Neue', fontWeight: 200, fontSize: 18, fill: 0x999999});
+    const infoText = new PIXI.Text({text: '', style: {fontFamily: 'Helvetica Neue', fontWeight: '200', fontSize: 13, fill: 0x999999}});
+    this.instructionText = new PIXI.Text({text: '', style: {fontFamily: 'Helvetica Neue', fontWeight: '200', fontSize: 18, fill: 0x999999}});
     this.instructionText.anchor.set(1, 0);
 
     infoText.x = infoText.y = 10;
@@ -77,8 +77,8 @@ export class Editor {
     this.layers.backgroundLayer.on('pointerdown', (e) => {
       g.clear();
 
-      const x = e.data.global.x;
-      const y = e.data.global.y;
+      const x = e.global.x;
+      const y = e.global.y;
 
       if (this.emitterPreset) {
 
@@ -111,8 +111,8 @@ export class Editor {
     });
 
     const pointerMove = (e) => {
-      this._lastPointerX = this.emitterGizmo.x = this.emitter.x = e.data.global.x;
-      this._lastPointerY = this.emitterGizmo.y = this.emitter.y = e.data.global.y;
+      this._lastPointerX = this.emitterGizmo.x = this.emitter.x = e.global.x;
+      this._lastPointerY = this.emitterGizmo.y = this.emitter.y = e.global.y;
     };
 
     const eventBus = vue.$eventBus;
@@ -179,19 +179,20 @@ export class Editor {
     return gizmo;
   }
 
-  async initBundle(bundleDef, spritesheetImageData, spritesheetDef) {
+  /** `fileName`: the bundle file this came from, which SAVE JSON then writes back to. */
+  async initBundle(bundleDef, spritesheetImageData, spritesheetDef, fileName) {
     this.vue.$eventBus.$emit(EVENT_RESET);
 
 
-    PIXI.loader.reset();
-    PIXI.utils.clearTextureCache();
-
     this.vue.$fx.dispose();
+    // The bundle BEFORE the sheet: initBundle also registers every frame it finds in pixi's cache,
+    // and the sheet registers its own (parseSpriteSheet), so the cache must not hold them yet.
+    this.clearSheetTextures();
     this.vue.$fx.initBundle(bundleDef);
-
     await this.createSpritesheet(spritesheetImageData, spritesheetDef, bundleDef.spritesheetFilter);
 
     this.vue.$store.commit(SET_BUNDLE, bundleDef);
+    this.vue.$store.commit(SET_BUNDLE_FILE, fileName || '');
 
     this.vue.$eventBus.$emit(EVENT_EMITTER_PRESET_SELECTED, null);
   }
@@ -206,10 +207,11 @@ export class Editor {
     let spritesheetImageData;
     let bundleDef;
     let spritesheetDef;
+    let bundleFileName;
 
     const done = async () => {
 
-      await this.initBundle(bundleDef, spritesheetImageData, spritesheetDef);
+      await this.initBundle(bundleDef, spritesheetImageData, spritesheetDef, bundleFileName);
       loader.close();
     };
 
@@ -234,6 +236,7 @@ export class Editor {
             const def = JSON.parse(s);
             if (def.__h) {
               bundleDef = def;
+              bundleFileName = entry.name.split('/').pop();
               if (def.__h !== this.bundleHash) {
                 throw new Error();
               }
@@ -312,16 +315,16 @@ export class Editor {
       zip.file(state.spritesheet.jsonName, JSON.stringify(state.spritesheet.json));
 
       const sprite = new PIXI.Sprite(state.spritesheet.image);
-      const base64Data = this.app.renderer.plugins.extract.base64(sprite).replace(/^data:image\/(png|jpg);base64,/, '');
-      zip.file(state.spritesheet.imageName, base64Data, {base64: true});
-
-
-      zip.generateAsync({
+      this.app.renderer.extract.base64(sprite)
+        .then(data => {
+          zip.file(state.spritesheet.imageName, data.replace(/^data:image\/(png|jpg);base64,/, ''), {base64: true});
+          return zip.generateAsync({
         type: 'blob', compression: "DEFLATE",
         compressionOptions: {
           level: 6
         }
-      })
+      });
+        })
         .then((content) => {
           saveAs(content, `${name}.zip`);
           loader.close();
@@ -339,21 +342,46 @@ export class Editor {
     saveAs(new Blob([JSON.stringify(obj)], {type: 'application/json'}), `${name}.json`);
   }
 
+  /**
+   * The file SAVE JSON writes: the bundle file that was loaded (or the new bundle's name), never the
+   * spritesheet's JSON. Empty when there is nothing to name it after.
+   */
+  saveFileName() {
+    const state = this.vue.$store.state;
+    let name = state.bundleFile || (state.bundle.name ? state.bundle.name : '');
+    if (name && !name.endsWith('.json')) {
+      name += '.json';
+    }
+    return name;
+  }
+
+  /**
+   * Saves the bundle into the game's particle folder through the breakaway dev server
+   * (`POST /config/revolt-fx-json`, which writes `raw-assets/particles{m}/<name>`).
+   */
   postJson(name, obj) {
     if (!name || name == '') {
-      name = this.vue.$store.state.spritesheet.jsonName;
+      name = this.saveFileName();
+    }
+    if (!name) {
+      return Promise.reject(new Error('No file name: load a bundle or create a new one first'));
     }
 
     if (!name.endsWith('.json')) {
       name += '.json';
     }
 
+    // Served by the dev server itself (`/fx-editor`): same origin, so the reply can be read and a
+    // failed save reported. Run on its own (`npm run dev`), it can only post blind (no CORS).
+    const sameOrigin = window.location.port === '9998';
+    const url = `${sameOrigin ? '' : 'http://localhost:9998'}/config/revolt-fx-json`;
+
     return new Promise((resolve, reject) => {
       const loader = this.vue.$loading({fullscreen: true, background: 'white', text: `POSTING BUNDLE ${name}`});
 
-      fetch('http://localhost:9998/config/revolt-fx-json', {
+      fetch(url, {
         method: 'POST',
-        mode: 'no-cors',
+        mode: sameOrigin ? 'same-origin' : 'no-cors',
         cache: 'no-cache',
         headers: {
           'Content-Type': 'application/json'
@@ -364,8 +392,11 @@ export class Editor {
           })
         },
       )
-        .then(_data => {
+        .then(async response => {
           loader.close();
+          if (sameOrigin && !response.ok) {
+            throw new Error(await response.text() || `HTTP ${response.status}`);
+          }
           resolve(name);
         })
         .catch(error => {
@@ -377,86 +408,82 @@ export class Editor {
   }
 
 
-  loadDefaultBundle() {
-    return new Promise(async (resolve, reject) => {
-
-      await this.loadSpriteSheetRemote('./static/revoltfx-spritesheet.json', 'fx-');
-
-      PIXI.loader.reset();
-      PIXI.loader.add('def', './static/default-bundle.json').load((l, resources) => {
-        this.vue.$store.commit(SET_BUNDLE, resources.def.data);
-        this.vue.$fx.initBundle(resources.def.data, true);
-        resolve();
-      });
-    });
+  async loadDefaultBundle() {
+    await this.loadSpriteSheetRemote('./static/revoltfx-spritesheet.json', 'fx-');
+    const def = await PIXI.Assets.load('./static/default-bundle.json');
+    this.vue.$store.commit(SET_BUNDLE, def);
+    this.vue.$fx.initBundle(def, true);
   }
 
-  loadSpriteSheetRemote(url, spritesheetFilter) {
-    return new Promise((resolve, reject) => {
-      const loader = this.vue.$loading({fullscreen: true, background: 'white', text: 'RevoltFX'});
-
-      PIXI.loader.reset();
-      PIXI.utils.clearTextureCache();
-
+  async loadSpriteSheetRemote(url, spritesheetFilter) {
+    const loader = this.vue.$loading({fullscreen: true, background: 'white', text: 'RevoltFX'});
+    try {
+      this.clearSheetTextures();
       this.vue.$fx.dispose();
 
-      PIXI.loader.add('sheet', url).load((l, resources) => {
-        loader.close();
+      const sheet = await PIXI.Assets.load(url);
+      const state = this.vue.$store.state;
+      state.spritesheet.jsonName = url.split('/').pop();
+      state.spritesheet.json = sheet.data;
+      state.spritesheet.imageName = sheet.data.meta.image;
+      state.spritesheet.image = new PIXI.Texture({source: sheet.textureSource});
 
-        this.vue.$store.state.spritesheet.jsonName = resources.sheet.url.split('/').pop();
-        this.vue.$store.state.spritesheet.json = resources.sheet.data;
-        this.vue.$store.state.spritesheet.imageName = resources.sheet_image.url.split('/').pop();
-        this.vue.$store.state.spritesheet.image = resources.sheet_image.texture;
-
-        this.createSpriteSheetImagesMap(resources.sheet.spritesheet, spritesheetFilter);
-
-        resolve();
-      });
-    });
+      this.registerSheetTextures(sheet);
+      this.createSpriteSheetImagesMap(sheet, spritesheetFilter);
+    } finally {
+      loader.close();
+    }
   }
 
   async loadSpritesheetLocal(jsonFile, imageFile) {
+    this.clearSheetTextures();
+    this.vue.$fx.dispose();
 
-    return new Promise(async (resolve, reject) => {
-      PIXI.loader.reset();
-      PIXI.utils.clearTextureCache();
-      this.vue.$fx.dispose();
-
-      try {
-        const def = JSON.parse(await readAsText(jsonFile));
-        const src = await readAsDataURL(imageFile);
-        resolve({json: def, image: src});
-      } catch (e) {
-        reject(e);
-      }
-    });
+    const def = JSON.parse(await readAsText(jsonFile));
+    const src = await readAsDataURL(imageFile);
+    return {json: def, image: src};
   }
 
+  /** `image`: the sheet's page as a data URL. */
+  async createSpritesheet(image, def, spritesheetFilter) {
+    this.clearSheetTextures();
 
-  createSpritesheet(image, def, spritesheetFilter) {
-    return new Promise((resolve, reject) => {
-      PIXI.utils.destroyTextureCache();
+    const img = new Image();
+    img.src = image;
+    await img.decode();
+    const texture = PIXI.Texture.from(img);
+    const spriteSheet = new PIXI.Spritesheet(texture, def);
+    await spriteSheet.parse();
 
-      const texture = new PIXI.Texture.from(image);
-      const spriteSheet = new PIXI.Spritesheet(texture.baseTexture, def);
+    this.vue.$store.state.spritesheet.json = def;
+    this.vue.$store.state.spritesheet.image = texture;
 
-      this.vue.$store.state.spritesheet.json = def;
-      this.vue.$store.state.spritesheet.image = texture;
+    this.registerSheetTextures(spriteSheet);
+    this.createSpriteSheetImagesMap(spriteSheet, spritesheetFilter);
+  }
 
-      spriteSheet.parse(() => {
-        setTimeout(() => {
-          this.createSpriteSheetImagesMap(spriteSheet, spritesheetFilter);
-          resolve();
-        }, 100);
-      });
-    });
+  /**
+   * revolt-fx finds a frame by NAME (`Texture.from(name)`, and `initBundle` scans pixi's cache for
+   * the frames and movie clips), so the sheet's frames go into pixi's cache under their names. The
+   * previous sheet's are taken out first, so frames never leak from one bundle to the next.
+   */
+  registerSheetTextures(sheet) {
+    this.clearSheetTextures();
+    this._sheetTextureNames = Object.keys(sheet.textures);
+    for (const name of this._sheetTextureNames) {
+      PIXI.Cache.set(name, sheet.textures[name]);
+    }
+  }
+
+  clearSheetTextures() {
+    for (const name of this._sheetTextureNames || []) {
+      if (PIXI.Cache.has(name)) PIXI.Cache.remove(name);
+    }
+    this._sheetTextureNames = [];
   }
 
   createSpriteSheetImagesMap(sheet, spritesheetFilter) {
-
-    console.log('create!!!');
-
-    const extract = this.app.renderer.plugins.extract;
+    const extract = this.app.renderer.extract;
 
     let result = this.vue.$fx.parseSpriteSheet(sheet, spritesheetFilter);
 
@@ -472,8 +499,10 @@ export class Editor {
     for (let f in sprites) {
       const spriteName = sprites[f];
 
-      const spr = PIXI.Sprite.fromFrame(spriteName);
-      const def = {name: spriteName, image: extract.image(spr)};
+      // Thumbnails for the image pickers (they read `image.src`).
+      const spr = new PIXI.Sprite(sheet.textures[spriteName]);
+      const def = {name: spriteName, image: {src: extract.canvas(spr).toDataURL()}};
+      spr.destroy();
       if (this.defaultSprite == null) this.defaultSprite = def;
       this.spritesheetImagesList.push(def);
       this.spritesheetImagesMap[def.name] = def;
@@ -514,12 +543,6 @@ export class Editor {
       return def;
     }
     return null;
-  }
-
-  setContainer(type, blendMode) {
-    this.vue.$eventBus.$emit(EVENT_EMITTER_PRESET_SELECTED, null);
-    this.vue.$eventBus.$emit(EVENT_RESET);
-    this.layers.setContentLayer(type, blendMode);
   }
 
   resize(w, h) {

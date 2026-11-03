@@ -1,7 +1,7 @@
 <template>
   <div style="height: 100%">
     <div layout="row center-left" style="height:100%">
-      <img class="logo" src="/static/rfx-logo.png"/>
+      <img class="logo" src="../assets/rfx-logo.png"/>
       <div style="width:120px">
         <div class="title">RevoltFX</div>
       </div>
@@ -24,6 +24,9 @@
         -
         <span style="cursor: pointer" @click="handleMenuItem('post_json')">
            <b>SAVE JSON</b>
+        </span>
+        <span class="save-file" title="The file SAVE JSON writes, in the game's particle folder. Click to change." @click="renameSaveFile">
+          ({{ saveFile || 'no file' }})
         </span>
       </div>
 
@@ -54,6 +57,7 @@
   import SaveBundle from "./SaveBundle";
   import LoadBundle from "./LoadBundle";
   import ShowBundleJson from "./ShowBundleJson";
+  import {SET_BUNDLE_FILE} from "../store";
 
   export default {
     name: "TopMenu",
@@ -61,7 +65,26 @@
     data() {
       return {}
     },
+    computed: {
+      // Read through the store, so it follows a load / new bundle / rename.
+      saveFile() {
+        const state = this.$store.state;
+        let name = state.bundleFile || state.bundle.name || '';
+        return name && !name.endsWith('.json') ? `${name}.json` : name;
+      }
+    },
     methods: {
+      renameSaveFile() {
+        this.$prompt('File SAVE JSON writes, in the game\'s particle folder', 'Save as', {
+          inputValue: this.saveFile,
+          inputPattern: /^[^\\/]+$/,
+          inputErrorMessage: 'A file name, without a folder',
+        }).then(({value}) => {
+          const name = value.trim();
+          this.$store.commit(SET_BUNDLE_FILE, name.endsWith('.json') ? name : `${name}.json`);
+        }).catch(() => {});
+      },
+
       handleMenuItem(item) {
         switch (item) {
           case 'new_bundle':
@@ -96,6 +119,11 @@
 <style scoped>
   .title {
     font-size: 1.5rem;
+  }
+
+  .save-file {
+    cursor: pointer;
+    opacity: 0.6;
   }
 
   .logo {

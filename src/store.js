@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import {FX} from 'revolt-fx';
-import {Editor} from "./editor/Editor";
+import {Editor} from "./editor/editor";
 import * as _ from 'lodash';
 
 
@@ -10,6 +10,7 @@ Vue.use(Vuex);
 export const INIT_BUNDLE = 'INIT_BUNDLE';
 export const SET_BUNDLE = 'SET_BUNDLE';
 export const SET_BUNDLE_NAME = 'SET_BUNDLE_NAME';
+export const SET_BUNDLE_FILE = 'SET_BUNDLE_FILE';
 
 export const ADD_EMITTER_PRESET = 'ADD_EMITTER_PRESET';
 export const DELETE_EMITTER_PRESET = 'DELETE_EMITTER_PRESET';
@@ -29,6 +30,9 @@ const getId = () => {
 
 //revolt-fx-bundle
 const state = {
+  // The file SAVE JSON writes to (in the game's particle folder, via the dev server): the bundle
+  // file that was loaded, or the new bundle's name. Not part of the bundle itself.
+  bundleFile: '',
   bundle: {
     name: '',
     id: '',
@@ -78,6 +82,10 @@ const mutations = {
 
   [SET_BUNDLE_NAME](state, name) {
     state.bundle.name = name;
+  },
+
+  [SET_BUNDLE_FILE](state, fileName) {
+    state.bundleFile = fileName;
   },
 
 

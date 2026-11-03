@@ -1,3 +1,4 @@
+import * as PIXI from 'pixi.js';
 import {ClickGizmo, Gizmos} from "./gizmos";
 
 export class Layers extends PIXI.Container {
@@ -8,11 +9,11 @@ export class Layers extends PIXI.Container {
     this.backgroundLayer = new PIXI.Container();
     this.contentLayer0 = new PIXI.Container();
 
+    // pixi 8's ParticleContainer only takes `Particle`s, not the sprites revolt-fx makes, so there is
+    // one content container (as in the games).
     this.standardContainer = new PIXI.Container();
-    this.particleContainer = new PIXI.particles.ParticleContainer();
 
     this.contentLayer1 = this.standardContainer;
-    this.contentLayer1.blendMode = PIXI.BLEND_MODES.NORMAL;
 
     this.contentLayer2 = new PIXI.Container();
     this.originLayer = new PIXI.Container();
@@ -25,7 +26,6 @@ export class Layers extends PIXI.Container {
     this.addChild(this.originLayer);
     this.addChild(this.contentLayer0);
     this.addChild(this.standardContainer);
-    this.addChild(this.particleContainer);
     this.addChild(this.contentLayer2);
     this.addChild(this.gizmoLayer);
 
@@ -39,30 +39,19 @@ export class Layers extends PIXI.Container {
 
     this.floorGizmo.visible = false;
 
-    this.backgroundLayer.interactive = true;
+    this.backgroundLayer.eventMode = 'static';
 
     this.gizmoLayer.addChild(this.clickGizmo);
 
 
     const g = this.backgroundSolid = new PIXI.Graphics();
-    g.beginFill(0xffffff, 1).drawRect(0, 0, 100, 100).endFill();
+    g.rect(0, 0, 100, 100).fill(0xffffff);
 
     this.backgroundLayer.addChild(g);
 
     this.setBackgroundColor(0x333333);
   }
 
-  setContentLayer(type, blendMode) {
-    switch (type) {
-      case 0:
-        this.contentLayer1 = this.standardContainer;
-        break;
-      case 1:
-        this.contentLayer1 = this.particleContainer;
-        break;
-    }
-    this.contentLayer1.blendMode = blendMode;
-  }
 
   setBackgroundColor(color) {
     this.backgroundSolid.tint = color;

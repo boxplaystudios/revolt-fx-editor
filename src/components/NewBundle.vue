@@ -14,7 +14,7 @@
         <el-button @click="visible = false">Cancel</el-button>
         <el-button :disabled="!createOk" type="primary" @click="create">Create</el-button>
       </span>
-      <img src="/static/foo.png" ref="preview" class="spritesheet-preview"/>
+      <img ref="preview" class="spritesheet-preview"/>
       <help text="Add only textures containing this string in their names as FX assets">
         <el-input v-model="spritesheetFilter" placeholder="Texture Filter" style="width:50%;" @change="checkFilter"></el-input>
       </help>
@@ -25,7 +25,7 @@
 
 <script>
 
-  import {INIT_BUNDLE} from "../store";
+  import {INIT_BUNDLE, SET_BUNDLE_FILE} from "../store";
   import {EVENT_EMITTER_PRESET_SELECTED, EVENT_RESET} from "../events";
   import Help from "./Help";
 
@@ -124,6 +124,7 @@
 
         this.$store.state.spritesheet.imageName = imageFile.name;
         this.$store.state.spritesheet.jsonName = jsonFile.name;
+        this.$store.commit(SET_BUNDLE_FILE, `${this.name || 'New Bundle'}.json`);
         this.visible = false;
         this.$eventBus.$emit(EVENT_EMITTER_PRESET_SELECTED, null);
         loader.close();

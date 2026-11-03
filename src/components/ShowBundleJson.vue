@@ -42,11 +42,11 @@
       // Post the bundle to the dev server
       post() {
         const b = this.$store.state.bundle;
-        this.$editor.postJson('SwollFX', b).then((filename) => {
-          this.$notify({title:`${filename} posted successfully`});
+        this.$editor.postJson(this.$editor.saveFileName(), b).then((filename) => {
+          this.$notify({title:`${filename} saved`});
         }).catch((error) => {
           console.error('Error posting bundle:', error);
-          this.$notify.error({title:'Error posting bundle'});
+          this.$notify.error({title: 'Error saving bundle', message: error && error.message});
         });
       },
 

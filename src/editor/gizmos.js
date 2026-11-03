@@ -11,19 +11,17 @@ export class Gizmos {
 
   static getOriginGizmo() {
     const g = new BaseGizmo();
-    g.lineStyle(1, 0x409EFF);
-    g.moveTo(-20, 0).lineTo(20, 0).moveTo(0, -20).lineTo(0, 20);
+    g.moveTo(-20, 0).lineTo(20, 0).moveTo(0, -20).lineTo(0, 20).stroke({width: 1, color: 0x409EFF});
     return g;
   }
 
   static getFloorGizmo() {
     const g = new BaseGizmo();
-    g.lineStyle(1, Gizmos.COLOR)
-      .beginFill(Gizmos.COLOR, 0.1)
-      .drawRect(0, 0, 10000, 10000)
-      .endFill();
+    g.rect(0, 0, 10000, 10000)
+      .fill({color: Gizmos.COLOR, alpha: 0.1})
+      .stroke({width: 1, color: Gizmos.COLOR});
 
-    g.blendMode = PIXI.BLEND_MODES.ADD;
+    g.blendMode = 'add';
     return g;
   }
 
@@ -56,9 +54,7 @@ export class Gizmos {
 export class ClickGizmo extends PIXI.Graphics {
   constructor() {
     super();
-    this.beginFill(Gizmos.COLOR, 0.3)
-      .drawCircle(0, 0, 15)
-      .endFill();
+    this.circle(0, 0, 15).fill({color: Gizmos.COLOR, alpha: 0.3});
     this.visible = false;
   }
 
@@ -84,22 +80,19 @@ export class CircleGizmo extends PIXI.Graphics {
     this.clear();
 
     if (angle === 0 || angle === 2 * Math.PI) {
-      this.beginFill(color, 0.2)
-        .drawCircle(0, 0, radius)
-        .endFill();
+      this.circle(0, 0, radius).fill({color, alpha: 0.2});
     } else {
       const px = Math.cos(-angle * 0.5) * radius;
       const py = Math.sin(-angle * 0.5) * radius;
 
-      this.beginFill(color, 0.2)
-        .moveTo(0, 0)
+      this.moveTo(0, 0)
         .lineTo(px, py)
         .arc(0, 0, radius, -angle * 0.5, angle * 0.5)
         .lineTo(0, 0)
-        .endFill();
+        .fill({color, alpha: 0.2});
     }
 
-    this.lineStyle(1, color, 0.7).moveTo(0, 0).lineTo(radius + 15, 0);
+    this.moveTo(0, 0).lineTo(radius + 15, 0).stroke({width: 1, color, alpha: 0.7});
 
   }
 }
@@ -114,14 +107,15 @@ export class RingGizmo extends PIXI.Graphics {
     const radius = params.radius;
     const color = Gizmos.COLOR;
 
-    this.clear().lineStyle(10, color, 0.3);
+    this.clear();
 
     if (angle === 0 || angle === 2 * Math.PI) {
-      this.drawCircle(0, 0, radius)
+      this.circle(0, 0, radius);
     } else {
       this.arc(0, 0, radius, -angle * 0.5, angle * 0.5);
     }
-    this.lineStyle(1, color, 0.7).moveTo(0, 0).lineTo(radius + 15, 0);
+    this.stroke({width: 10, color, alpha: 0.3});
+    this.moveTo(0, 0).lineTo(radius + 15, 0).stroke({width: 1, color, alpha: 0.7});
   }
 }
 
@@ -136,10 +130,10 @@ export class BoxGizmo extends PIXI.Graphics {
     const color = Gizmos.COLOR;
 
     this.clear()
-      .beginFill(color, 0.3)
-      .drawRect(-width * 0.5, -height * 0.5, width, height)
-      .endFill()
-      .lineStyle(1, color, 0.7).moveTo(0, 0).lineTo(width * 0.5 + 15, 0);
+      .rect(-width * 0.5, -height * 0.5, width, height)
+      .fill({color, alpha: 0.3})
+      .moveTo(0, 0).lineTo(width * 0.5 + 15, 0)
+      .stroke({width: 1, color, alpha: 0.7});
   }
 }
 

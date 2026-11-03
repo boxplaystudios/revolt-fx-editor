@@ -25,7 +25,6 @@
 </template>
 
 <script>
-  import * as PIXI from 'pixi.js';
   import ImageSelectThumb from "./ImageSelectThumb";
 
 

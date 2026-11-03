@@ -466,7 +466,6 @@
   import ChildList from "./ChildList";
   import Help from "./Help";
 
-  import {RevoltFX} from 'revolt-fx';
   import MinMaxNumberAngleDegreesValue from "./values/MinMaxNumberAngleDegreesValue";
   import ParticleComponentValue from "./values/ParticleComponentValue";
 

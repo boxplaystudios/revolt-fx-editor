@@ -16,7 +16,6 @@
 <script>
   import ValueGroup from "./values/ValueGroup";
   import NumberValue from "./values/NumberValue";
-  import {RevoltFX} from 'revolt-fx';
   import Help from "./Help";
 
   export default {

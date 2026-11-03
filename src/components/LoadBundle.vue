@@ -17,7 +17,7 @@
       </help>
 
       <div v-if="mode == 'files'" class="spritesheet-preview">
-        <img src="/static/foo.png" ref="preview"/>
+        <img ref="preview"/>
       </div>
 
       <span slot="footer" class="dialog-footer">
@@ -116,6 +116,8 @@
           }
 
           this.mode = 'files';
+          // The preview only exists once the dialog has re-rendered in files mode.
+          await this.$nextTick();
 
           this.infoFiles = `${imageFile.name}, ${jsonFile.name}, ${presetFile.name}`;
 
@@ -167,7 +169,10 @@
             this.$editor.loadLocalZipBundle(this.zipFile);
             break;
           case 'files':
-            this.$editor.initBundle(tempPreset, tempImage, tempJson);
+            // Bundle > Save... with spritesheet zips the sheet under these names.
+            this.$store.state.spritesheet.imageName = imageFile.name;
+            this.$store.state.spritesheet.jsonName = jsonFile.name;
+            this.$editor.initBundle(tempPreset, tempImage, tempJson, presetFile.name);
             break;
         }
 
