@@ -342,6 +342,20 @@ export class Editor {
     saveAs(new Blob([JSON.stringify(obj)], {type: 'application/json'}), `${name}.json`);
   }
 
+  /** LOAD GAME BUNDLE: the running game's built bundle, from the dev server. Resolves with its file name. */
+  async loadGameBundle() {
+    const response = await fetch('/config/revolt-fx-bundle', {cache: 'no-cache'});
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+    const {bundleFile, bundle, sheetJson, image} = await response.json();
+    // Bundle > Save... zips the sheet under these names.
+    this.vue.$store.state.spritesheet.imageName = 'particles.png';
+    this.vue.$store.state.spritesheet.jsonName = 'particles.png.json';
+    await this.initBundle(bundle, image, sheetJson, bundleFile);
+    return bundleFile;
+  }
+
   /**
    * The file SAVE JSON writes: the bundle file that was loaded (or the new bundle's name), never the
    * spritesheet's JSON. Empty when there is nothing to name it after.

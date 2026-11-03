@@ -18,16 +18,22 @@
           </el-dropdown-menu>
         </el-dropdown>
         -
-        <span style="cursor: pointer" @click="handleMenuItem('copy_json')">
-           COPY JSON
+        <!-- Nothing open yet: load the game's bundle. Once a bundle is open: copy / save it. -->
+        <span v-if="!bundleOpen" style="cursor: pointer" @click="handleMenuItem('load_game')" title="Load the game's built bundle (dist/assets/particles) through the dev server">
+           <b>LOAD GAME BUNDLE</b>
         </span>
-        -
-        <span style="cursor: pointer" @click="handleMenuItem('post_json')">
-           <b>SAVE JSON</b>
-        </span>
-        <span class="save-file" title="The file SAVE JSON writes, in the game's particle folder. Click to change." @click="renameSaveFile">
-          ({{ saveFile || 'no file' }})
-        </span>
+        <template v-else>
+          <span style="cursor: pointer" @click="handleMenuItem('copy_json')">
+             COPY JSON
+          </span>
+          -
+          <span style="cursor: pointer" @click="handleMenuItem('post_json')">
+             <b>SAVE JSON</b>
+          </span>
+          <span class="save-file" title="The file SAVE JSON writes, in the game's particle folder. Click to change." @click="renameSaveFile">
+            ({{ saveFile }})
+          </span>
+        </template>
       </div>
 
       <div self="right" style="margin-right: 10px">
@@ -66,6 +72,10 @@
       return {}
     },
     computed: {
+      // Every way of opening a bundle (Load..., a zip, New..., the game) names its file.
+      bundleOpen() {
+        return !!this.$store.state.bundleFile;
+      },
       // Read through the store, so it follows a load / new bundle / rename.
       saveFile() {
         const state = this.$store.state;
@@ -105,6 +115,12 @@
 
           case 'copy_json':
             this.$refs.showBundleJsonPanel.copy();
+            break;
+
+          case 'load_game':
+            this.$editor.loadGameBundle()
+              .then((file) => this.$notify({title: `${file} loaded from the game`}))
+              .catch((e) => this.$notify.error({title: 'Could not load the game bundle', message: e.message}));
             break;
 
           case 'post_json':

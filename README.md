@@ -67,6 +67,9 @@ npm run deploy -- /path/to/boxplay    # another boxplay checkout
 
 Then commit the changed `packages/dev-server/bin/public/fx-editor` in the boxplay repo.
 
+**LOAD GAME BUNDLE** loads the running game's built bundle from the dev server
+(`dist/assets/particles`: the bundle JSON plus `particles.png` / `particles.png.json`).
+
 **SAVE JSON** posts the bundle to the dev server, which writes it into the running game's
 `raw-assets/particles{m}/`. The file name is shown next to it: the bundle file you loaded (or the
 new bundle's name); click it to change it.
