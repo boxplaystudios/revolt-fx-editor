@@ -71,6 +71,12 @@ Then commit the changed `packages/dev-server/bin/public/fx-editor` in the boxpla
 `dist/assets/particles` (or one level below it) holding a bundle JSON and a `.png` spritesheet. SAVE
 JSON then writes back to the `raw-assets` folder that bundle came from.
 
+**Game** (below the canvas) shows the running game behind the effects, at the game's own scale (the
+1600x900 fit every game uses), so effects look the size they will in the game; **Play game** passes
+clicks to the game (spin, open its controls). The game is the `?game=` URL, which the game's FX
+EDITOR button passes; `http://localhost:9999` otherwise. Opened from a game, the editor also loads
+that game's bundle (LOAD GAME BUNDLE) by itself.
+
 **SAVE JSON** posts the bundle to the dev server, which writes it into the running game's
 `raw-assets/particles{m}/`. The file name is shown next to it: the bundle file you loaded (or the
 new bundle's name); click it to change it.

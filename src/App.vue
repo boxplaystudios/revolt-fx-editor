@@ -39,6 +39,14 @@
         const editor = Vue.prototype.$editor = new Editor(app, this);
         //await editor.loadDefaultBundle();
         this.blocker = false;
+
+        // Opened from a game (its FX EDITOR button passes `?game=`): load that game's particle bundle.
+        // Quietly when it has none; LOAD GAME BUNDLE stays there to try by hand.
+        if (new URLSearchParams(window.location.search).has('game')) {
+          editor.loadGameBundle()
+            .then((file) => this.$notify({title: `${file} loaded from the game`}))
+            .catch((e) => console.info('No game particle bundle loaded:', e.message));
+        }
       });
     }
   }

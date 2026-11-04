@@ -21,13 +21,18 @@ export class Layers extends PIXI.Container {
 
     this.clickGizmo = new ClickGizmo();
 
+    // Effects and their gizmos, in EFFECT coordinates: 1:1 with the screen, or the game's scene
+    // coordinates while the game is shown behind the canvas (see `setWorld`).
+    this.world = new PIXI.Container();
+    this.world.addChild(this.contentLayer0);
+    this.world.addChild(this.standardContainer);
+    this.world.addChild(this.contentLayer2);
+    this.world.addChild(this.gizmoLayer);
+
     this.addChild(this.backgroundLayer);
     this.addChild(this.infoLayer);
     this.addChild(this.originLayer);
-    this.addChild(this.contentLayer0);
-    this.addChild(this.standardContainer);
-    this.addChild(this.contentLayer2);
-    this.addChild(this.gizmoLayer);
+    this.addChild(this.world);
 
 
     this.floorGizmoLayer = new PIXI.Container();
@@ -52,6 +57,11 @@ export class Layers extends PIXI.Container {
     this.setBackgroundColor(0x333333);
   }
 
+
+  setWorld(scale, x, y) {
+    this.world.scale.set(scale);
+    this.world.position.set(x, y);
+  }
 
   setBackgroundColor(color) {
     this.backgroundSolid.tint = color;

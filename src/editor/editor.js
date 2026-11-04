@@ -77,8 +77,7 @@ export class Editor {
     this.layers.backgroundLayer.on('pointerdown', (e) => {
       g.clear();
 
-      const x = e.global.x;
-      const y = e.global.y;
+      const {x, y} = this.layers.world.toLocal(e.global);
 
       if (this.emitterPreset) {
 
@@ -111,8 +110,9 @@ export class Editor {
     });
 
     const pointerMove = (e) => {
-      this._lastPointerX = this.emitterGizmo.x = this.emitter.x = e.global.x;
-      this._lastPointerY = this.emitterGizmo.y = this.emitter.y = e.global.y;
+      const {x, y} = this.layers.world.toLocal(e.global);
+      this._lastPointerX = this.emitterGizmo.x = this.emitter.x = x;
+      this._lastPointerY = this.emitterGizmo.y = this.emitter.y = y;
     };
 
     const eventBus = vue.$eventBus;
@@ -568,6 +568,33 @@ export class Editor {
     this.height = h;
     this.layers.resize(w, h);
     this.instructionText.x = w - 10;
+    this.applyGameScale();
+  }
+
+  /** The game shown behind the canvas (RenderCanvas owns the iframe): see through, game-sized effects. */
+  setGameView(on) {
+    this.gameView = on;
+    // Kept, invisible: it still takes the clicks that place effects.
+    this.layers.backgroundSolid.alpha = on ? 0 : 1;
+    this.applyGameScale();
+  }
+
+  /**
+   * With the game behind the canvas, effects are drawn at the game's own scale: every game fits its
+   * 1600x900 design area (900x1600 when taller than wide) into the window, letterboxed and centred
+   * (GameAreaResizeManager in breakaway pixi-core). The iframe is the canvas's size, so the same
+   * rule here puts effects in the game's scene coordinates.
+   */
+  applyGameScale() {
+    if (!this.gameView) {
+      this.layers.setWorld(1, 0, 0);
+      return;
+    }
+    const landscape = this.width > this.height;
+    const dw = landscape ? 1600 : 900;
+    const dh = landscape ? 900 : 1600;
+    const scale = Math.min(this.width / dw, this.height / dh);
+    this.layers.setWorld(scale, (this.width - dw * scale) / 2, (this.height - dh * scale) / 2);
   }
 
   removeEmitter() {
