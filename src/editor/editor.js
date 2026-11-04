@@ -193,6 +193,7 @@ export class Editor {
 
     this.vue.$store.commit(SET_BUNDLE, bundleDef);
     this.vue.$store.commit(SET_BUNDLE_FILE, fileName || '');
+    this.savePath = '';
 
     this.vue.$eventBus.$emit(EVENT_EMITTER_PRESET_SELECTED, null);
   }
@@ -348,11 +349,13 @@ export class Editor {
     if (!response.ok) {
       throw new Error(await response.text());
     }
-    const {bundleFile, bundle, sheetJson, image} = await response.json();
+    const {bundleFile, savePath, bundle, sheetFile, sheetJson, imageName, image} = await response.json();
     // Bundle > Save... zips the sheet under these names.
-    this.vue.$store.state.spritesheet.imageName = 'particles.png';
-    this.vue.$store.state.spritesheet.jsonName = 'particles.png.json';
+    this.vue.$store.state.spritesheet.imageName = imageName;
+    this.vue.$store.state.spritesheet.jsonName = sheetFile;
     await this.initBundle(bundle, image, sheetJson, bundleFile);
+    // SAVE JSON writes back to the game folder this came from (the dev server's default otherwise).
+    this.savePath = savePath || '';
     return bundleFile;
   }
 
@@ -403,6 +406,7 @@ export class Editor {
         body: JSON.stringify({
             filename: name,
             content: obj,
+            path: this.savePath || '',
           })
         },
       )

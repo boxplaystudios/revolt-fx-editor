@@ -26,5 +26,20 @@ export default defineConfig({
     },
   },
   server: { port: 8080 },
-  build: { outDir: 'dist', assetsDir: 'static/assets', chunkSizeWarningLimit: 2500 },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'static/assets',
+    chunkSizeWarningLimit: 2500,
+    // The build is committed into the boxplay repo (dev server), so keep it small and stable: ONE
+    // script (pixi's lazy-loaded renderers inlined) and no content hashes in file names, so a
+    // redeploy modifies the same few files instead of deleting and adding new ones. The dev server
+    // revalidates on every request, so there is no stale cache to bust.
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: true,
+        entryFileNames: 'static/assets/[name].js',
+        assetFileNames: 'static/assets/[name][extname]',
+      },
+    },
+  },
 });
